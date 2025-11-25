@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en" class="h-full w-full">
+ <head>
+  <meta charset="UTF-8">
+  <title>AniListify</title><!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    /* Anime glow and sparkles */
+    .anime-card {
+      box-shadow:
+        0 0 25px rgba(255, 255, 255, 0.4),
+        0 0 60px rgba(255, 192, 203, 0.25);
+      border-radius: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .anime-orbit {
+      position: absolute;
+      border-radius: 9999px;
+      opacity: 0.25;
+      filter: blur(1px);
+      pointer-events: none;
+    }
+    .anime-orbit-1 {
+      width: 60%;
+      height: 40%;
+      top: -10%;
+      right: -10%;
+    }
+    .anime-orbit-2 {
+      width: 55%;
+      height: 35%;
+      bottom: -10%;
+      left: -5%;
+    }
+    .sparkle {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+      opacity: 0.9;
+    }
+    .sparkle::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: inherit;
+      border-width: 1px;
+      border-style: solid;
+      opacity: 0.6;
+    }
+    .sparkle-1 { top: 14%; left: 18%; }
+    .sparkle-2 { top: 32%; right: 12%; }
+    .sparkle-3 { bottom: 18%; left: 8%; }
+    .sparkle-4 { bottom: 26%; right: 22%; }
+
+    /* Focus outlines */
+    .focus-ring:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.9);
+      outline-offset: 2px;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full w-full">
+  <div id="app-root" class="w-full h-full bg-gradient-to-br from-purple-900 via-fuchsia-900 to-sky-900 flex items-center justify-center p-4">
+   <div class="app-wrapper w-full max-w-3xl h-full max-h-[900px] mx-auto flex flex-col">
+    <header class="mb-4">
+     <h1 id="main-title" class="text-center font-semibold tracking-tight drop-shadow-lg"></h1>
+     <p id="subtitle" class="text-center mt-1 opacity-90"></p>
+    </header>
+    <main class="flex-1 min-h-0">
+     <section aria-label="AniListify" class="h-full">
+      <div class="anime-card bg-slate-900/60 border border-fuchsia-300/40 backdrop-blur-md h-full flex flex-col"><!-- Orbits and sparkles (colored via JS) -->
+       <div id="orbit-1" class="anime-orbit anime-orbit-1"></div>
+       <div id="orbit-2" class="anime-orbit anime-orbit-2"></div>
+       <div id="sparkle-1" class="sparkle sparkle-1"></div>
+       <div id="sparkle-2" class="sparkle sparkle-2"></div>
+       <div id="sparkle-3" class="sparkle sparkle-3"></div>
+       <div id="sparkle-4" class="sparkle sparkle-4"></div><!-- Inner content -->
+       <div class="relative z-10 flex flex-col h-full px-6 py-4 sm:px-8 sm:py-6"><!-- Hero row -->
+        <div class="flex items-center justify-between gap-4 mb-4">
+         <div class="flex items-center gap-3"><!-- Anime chibi-style SVG -->
+          <div id="avatar-ring" class="rounded-full p-1 border-2 shadow-md">
+           <div id="avatar-inner" class="rounded-full p-1 bg-slate-900 flex items-center justify-center">
+            <svg aria-hidden="true" class="w-10 h-10" viewbox="0 0 80 80"><!-- Hair --> <path id="avatar-hair" d="M10 38 Q40 5 70 38 Q60 30 52 30 Q46 22 40 30 Q34 22 28 30 Q20 30 10 38Z" /> <!-- Face --> <circle id="avatar-face" cx="40" cy="46" r="18" /> <!-- Eyes --> <ellipse id="eye-left" cx="32" cy="44" rx="4" ry="6" /> <ellipse id="eye-right" cx="48" cy="44" rx="4" ry="6" /> <!-- Eye highlights --> <circle id="eye-left-highlight" cx="31" cy="42.5" r="1.2" fill="white" /> <circle id="eye-right-highlight" cx="47" cy="42.5" r="1.2" fill="white" /> <!-- Mouth --> <path id="avatar-mouth" d="M32 54 Q40 58 48 54" stroke-width="2" fill="none" stroke-linecap="round" /> <!-- Blush --> <ellipse id="blush-left" cx="30" cy="50" rx="3.5" ry="2.2" /> <ellipse id="blush-right" cx="50" cy="50" rx="3.5" ry="2.2" />
+            </svg>
+           </div>
+          </div>
+          <div>
+           <p id="hero-line" class="text-xs uppercase tracking-[0.2em] mb-0.5 opacity-80"></p>
+           <p id="hero-subline" class="text-xs opacity-80"></p>
+          </div>
+         </div>
+         <div class="text-right">
+          <p id="counter-label" class="text-xs opacity-80 mb-1"></p>
+          <p id="counter-value" class="text-lg font-semibold"></p>
+         </div>
+        </div><!-- Input row -->
+        <form id="todo-form" class="mb-3" aria-label="Add new anime quest">
+         <div class="flex flex-col sm:flex-row gap-3">
+          <div class="flex-1"><label for="todo-input" id="todo-input-label" class="sr-only">New task</label> <input id="todo-input" name="todo-input" type="text" class="focus-ring w-full rounded-xl border border-fuchsia-300/40 bg-slate-900/70 px-3 py-2 text-sm placeholder-slate-400/80 shadow-inner outline-none" autocomplete="off">
+          </div>
+          <div class="flex items-stretch gap-2">
+           <div class="flex items-center"><label for="priority-select" id="priority-label" class="sr-only">Priority</label> <select id="priority-select" name="priority-select" class="focus-ring rounded-xl border border-fuchsia-300/40 bg-slate-900/70 px-2 py-2 text-xs outline-none" aria-label="Priority"> <option value="normal">Normal</option> <option value="Urgent">Urgent</option> <option value="Emergency">Emergency</option> </select>
+           </div><button id="add-button" type="submit" class="focus-ring inline-flex items-center justify-center rounded-xl px-4 text-sm font-semibold shadow-md transition-transform duration-150 ease-out"> <span id="add-button-label"></span> <span aria-hidden="true" class="ml-1">✨</span> </button>
+          </div>
+         </div>
+         <p id="form-message" class="mt-2 text-xs"></p>
+        </form><!-- Filters -->
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+         <p id="filter-label" class="text-xs opacity-80 mr-1"></p>
+         <div class="inline-flex rounded-full bg-slate-900/60 border border-fuchsia-300/40 p-1 text-xs"><button type="button" id="filter-all" class="focus-ring px-3 py-1 rounded-full">All</button> <button type="button" id="filter-active" class="focus-ring px-3 py-1 rounded-full">Active</button> <button type="button" id="filter-completed" class="focus-ring px-3 py-1 rounded-full">Completed</button>
+         </div>
+        </div><!-- List -->
+        <div class="flex-1 min-h-0 overflow-y-auto pr-1" aria-live="polite">
+         <ul id="todo-list" class="space-y-2"></ul>
+         <div id="empty-state" class="mt-6 text-center text-xs opacity-80"></div>
+        </div><!-- Footer row -->
+        <div class="mt-4 pt-3 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-2 text-[11px] opacity-80">
+         <p id="footer-text"></p>
+         <p><span aria-hidden="true">★</span> <span> Double-tap a quest to toggle it.</span></p>
+        </div>
+       </div>
+      </div>
+     </section>
+    </main>
+    <footer class="mt-3 text-center text-[11px] opacity-70"><span aria-hidden="true">※</span> <span> AniListify - || Aneruth.</span>
+    </footer> 
+   </div>
+  </div>
+  <script>
+    // --------- CONFIG ---------
+    const config = {
+      // Colors (up to 5)
+      background_color: "#1e1b4b",       // deep indigo base
+      surface_color: "#020617",          // slate-950-like card background
+      text_color: "#e5e7eb",             // light gray text
+      primary_action_color: "#f97316",   // orange for add button, Emergency tags
+      secondary_action_color: "#a855f7", // purple for filters, accents
+
+      // Typography
+      font_family: "Poppins",
+      font_size: 14,
+
+      // Text content
+      main_title: "Anime Quest Log",
+      subtitle: "Turn your daily tasks into Emergency adventures.",
+      input_placeholder: "Write your next quest...",
+      add_button_text: "Add Quest",
+      empty_state_text: "No quests yet. Your story is about to begin.",
+      footer_text: "Stay determined. Even heroes need checklists.",
+    };
+
+    // --------- APPLY CONFIG TO UI ---------
+    function applyConfig() {
+      const baseSize = config.font_size;
+      const customFont = config.font_family;
+      const fontStack = `${customFont}, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+
+      const root = document.getElementById("app-root");
+      if (root) {
+        root.style.fontFamily = fontStack;
+        root.style.color = config.text_color;
+        root.style.backgroundImage = `linear-gradient(135deg, ${config.background_color}, #4c1d95, #0f172a)`;
+      }
+
+      // Text elements
+      const mainTitle = document.getElementById("main-title");
+      const subtitleEl = document.getElementById("subtitle");
+      const heroLine = document.getElementById("hero-line");
+      const heroSubline = document.getElementById("hero-subline");
+      const counterLabel = document.getElementById("counter-label");
+      const counterValue = document.getElementById("counter-value");
+      const filterLabel = document.getElementById("filter-label");
+      const footerText = document.getElementById("footer-text");
+
+      if (mainTitle) {
+        mainTitle.textContent = config.main_title;
+        mainTitle.style.fontSize = (baseSize * 2.1) + "px";
+      }
+      if (subtitleEl) {
+        subtitleEl.textContent = config.subtitle;
+        subtitleEl.style.fontSize = (baseSize * 1.0) + "px";
+      }
+      if (heroLine) {
+        heroLine.textContent = "DAILY QUESTS";
+        heroLine.style.fontSize = (baseSize * 0.75) + "px";
+      }
+      if (heroSubline) {
+        heroSubline.textContent = "Complete tasks, level up your life.";
+        heroSubline.style.fontSize = (baseSize * 0.8) + "px";
+      }
+      if (counterLabel) {
+        counterLabel.textContent = "Quests complete";
+        counterLabel.style.fontSize = (baseSize * 0.78) + "px";
+      }
+      if (counterValue) {
+        counterValue.style.fontSize = (baseSize * 1.2) + "px";
+        counterValue.style.color = config.primary_action_color;
+      }
+      if (filterLabel) {
+        filterLabel.textContent = "View:";
+        filterLabel.style.fontSize = (baseSize * 0.78) + "px";
+      }
+      if (footerText) {
+        footerText.textContent = config.footer_text;
+        footerText.style.fontSize = (baseSize * 0.8) + "px";
+        footerText.style.color = config.text_color;
+      }
+
+      // Input and button
+      const todoInput = document.getElementById("todo-input");
+      if (todoInput) {
+        todoInput.placeholder = config.input_placeholder;
+        todoInput.style.fontSize = (baseSize * 0.95) + "px";
+        todoInput.style.color = config.text_color;
+      }
+
+      const addButton = document.getElementById("add-button");
+      const addButtonLabel = document.getElementById("add-button-label");
+      if (addButton && addButtonLabel) {
+        addButtonLabel.textContent = config.add_button_text;
+        addButton.style.backgroundColor = config.primary_action_color;
+        addButton.style.color = "#000000";
+        addButton.style.fontSize = (baseSize * 0.95) + "px";
+      }
+
+      const prioritySelect = document.getElementById("priority-select");
+      if (prioritySelect) {
+        prioritySelect.style.fontSize = (baseSize * 0.85) + "px";
+        prioritySelect.style.color = config.text_color;
+      }
+
+      // Filters
+      const filterAll = document.getElementById("filter-all");
+      const filterActive = document.getElementById("filter-active");
+      const filterCompleted = document.getElementById("filter-completed");
+      [filterAll, filterActive, filterCompleted].forEach(btn => {
+        if (btn) {
+          btn.style.fontSize = (baseSize * 0.8) + "px";
+          btn.style.color = config.text_color;
+        }
+      });
+
+      // Empty state
+      const emptyState = document.getElementById("empty-state");
+      if (emptyState) {
+        emptyState.textContent = config.empty_state_text;
+        emptyState.style.fontSize = (baseSize * 0.85) + "px";
+      }
+
+      // Card surface
+      const animeCard = document.querySelector(".anime-card");
+      if (animeCard) {
+        animeCard.style.backgroundColor = config.surface_color;
+      }
+
+      // Orbits and sparkles
+      const orbit1 = document.getElementById("orbit-1");
+      const orbit2 = document.getElementById("orbit-2");
+      if (orbit1) {
+        orbit1.style.background = `radial-gradient(circle at 30% 0%, ${config.primary_action_color}, transparent 60%)`;
+      }
+      if (orbit2) {
+        orbit2.style.background = `radial-gradient(circle at 70% 100%, ${config.secondary_action_color}, transparent 65%)`;
+      }
+
+      const sparkles = [
+        document.getElementById("sparkle-1"),
+        document.getElementById("sparkle-2"),
+        document.getElementById("sparkle-3"),
+        document.getElementById("sparkle-4"),
+      ];
+      sparkles.forEach((el, index) => {
+        if (el) {
+          const color = index % 2 === 0 ? config.primary_action_color : config.secondary_action_color;
+          el.style.backgroundColor = color;
+          el.style.boxShadow = `0 0 12px ${color}`;
+        }
+      });
+
+      // Avatar colors
+      const hair = document.getElementById("avatar-hair");
+      const face = document.getElementById("avatar-face");
+      const eyeLeft = document.getElementById("eye-left");
+      const eyeRight = document.getElementById("eye-right");
+      const mouth = document.getElementById("avatar-mouth");
+      const blushLeft = document.getElementById("blush-left");
+      const blushRight = document.getElementById("blush-right");
+      const avatarRing = document.getElementById("avatar-ring");
+      const avatarInner = document.getElementById("avatar-inner");
+
+      if (hair) hair.setAttribute("fill", config.secondary_action_color);
+      if (face) face.setAttribute("fill", "#f9e2d2");
+      if (eyeLeft) eyeLeft.setAttribute("fill", config.background_color);
+      if (eyeRight) eyeRight.setAttribute("fill", config.background_color);
+      if (mouth) mouth.setAttribute("stroke", config.primary_action_color);
+      if (blushLeft) blushLeft.setAttribute("fill", "#fda4af");
+      if (blushRight) blushRight.setAttribute("fill", "#fda4af");
+      if (avatarRing) {
+        avatarRing.style.borderColor = config.secondary_action_color;
+        avatarRing.style.backgroundColor = config.secondary_action_color + "20";
+      }
+      if (avatarInner) {
+        avatarInner.style.backgroundColor = config.surface_color;
+      }
+    }
+
+    // --------- DATA & TODO LOGIC ---------
+    let currentFilter = "all";
+    let todos = [];
+
+    // Load from localStorage
+    function loadTodos() {
+      try {
+        const stored = localStorage.getItem("anime_todos");
+        if (stored) {
+          todos = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("Failed to load todos", e);
+      }
+    }
+
+    // Save to localStorage
+    function saveTodos() {
+      try {
+        localStorage.setItem("anime_todos", JSON.stringify(todos));
+      } catch (e) {
+        console.error("Failed to save todos", e);
+      }
+    }
+
+    function setFilterButtonStyles() {
+      const allBtn = document.getElementById("filter-all");
+      const activeBtn = document.getElementById("filter-active");
+      const completedBtn = document.getElementById("filter-completed");
+      const buttons = [
+        { el: allBtn, key: "all" },
+        { el: activeBtn, key: "active" },
+        { el: completedBtn, key: "completed" }
+      ];
+
+      buttons.forEach(({ el, key }) => {
+        if (!el) return;
+        const isActive = currentFilter === key;
+        el.style.backgroundColor = isActive ? config.secondary_action_color : "transparent";
+        el.style.color = isActive ? "#000000" : config.text_color;
+      });
+    }
+
+    function filteredTodos() {
+      if (currentFilter === "active") {
+        return todos.filter(t => !t.completed);
+      }
+      if (currentFilter === "completed") {
+        return todos.filter(t => t.completed);
+      }
+      return todos;
+    }
+
+    function renderTodoList() {
+      const list = document.getElementById("todo-list");
+      const emptyState = document.getElementById("empty-state");
+      const counterValue = document.getElementById("counter-value");
+
+      if (!list) return;
+
+      const container = list;
+      const existingNodes = new Map(
+        Array.from(container.children).map((el) => [el.getAttribute("data-id"), el])
+      );
+
+      const visible = filteredTodos();
+
+      visible.forEach((todo) => {
+        let li = existingNodes.get(todo.id);
+        if (li) {
+          updateTodoListItemElement(li, todo);
+          existingNodes.delete(todo.id);
+        } else {
+          li = createTodoListItemElement(todo);
+          container.appendChild(li);
+        }
+      });
+
+      existingNodes.forEach((el) => el.remove());
+
+      // Empty state
+      if (emptyState) {
+        if (todos.length === 0) {
+          emptyState.style.display = "block";
+          emptyState.textContent = config.empty_state_text;
+        } else if (filteredTodos().length === 0) {
+          emptyState.textContent = currentFilter === "completed"
+            ? "No completed quests yet. Finish one to celebrate!"
+            : "No active quests. Time to relax, hero.";
+          emptyState.style.display = "block";
+        } else {
+          emptyState.style.display = "none";
+        }
+      }
+
+      // Counter
+      if (counterValue) {
+        const completedCount = todos.filter(t => t.completed).length;
+        const total = todos.length;
+        counterValue.textContent = total === 0 ? "0 / 0" : `${completedCount} / ${total}`;
+      }
+
+      setFilterButtonStyles();
+    }
+
+    function priorityLabelAndColor(priority) {
+      if (priority === "Emergency") {
+        return { label: "Emergency Quest", bg: config.primary_action_color, text: "#111827" };
+      }
+      if (priority === "Urgent") {
+        return { label: "Urgent", bg: config.secondary_action_color, text: "#020617" };
+      }
+      return { label: "Daily", bg: "#0f172a", text: config.text_color };
+    }
+
+    function createTodoListItemElement(todo) {
+      const li = document.createElement("li");
+      li.setAttribute("data-id", todo.id);
+      li.className = "group flex items-start gap-3 rounded-xl border border-slate-700/80 bg-slate-900/80 px-3 py-2 text-xs transition-transform duration-150 ease-out";
+
+      li.addEventListener("dblclick", () => {
+        handleToggleTodo(todo);
+      });
+
+      const checkboxWrapper = document.createElement("button");
+      checkboxWrapper.type = "button";
+      checkboxWrapper.className = "focus-ring mt-1 h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0";
+      checkboxWrapper.setAttribute("aria-pressed", todo.completed ? "true" : "false");
+      checkboxWrapper.addEventListener("click", () => {
+        handleToggleTodo(todo);
+      });
+
+      const innerDot = document.createElement("div");
+      innerDot.className = "h-2.5 w-2.5 rounded-full";
+      checkboxWrapper.appendChild(innerDot);
+
+      const mainCol = document.createElement("div");
+      mainCol.className = "flex-1 min-w-0";
+
+      const titleRow = document.createElement("div");
+      titleRow.className = "flex items-center justify-between gap-2";
+
+      const textEl = document.createElement("p");
+      textEl.className = "truncate";
+      textEl.textContent = todo.title;
+
+      const badge = document.createElement("span");
+      badge.className = "ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border border-slate-700/80";
+
+      const metaRow = document.createElement("div");
+      metaRow.className = "mt-1 flex items-center justify-between gap-2 text-[10px] opacity-80";
+
+      const createdAt = document.createElement("span");
+      createdAt.textContent = formatCreatedAt(todo.created_at);
+
+      const actionsRow = document.createElement("div");
+      actionsRow.className = "flex items-center gap-2";
+
+      const completeLabel = document.createElement("span");
+      completeLabel.textContent = todo.completed ? "Completed" : "In progress";
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className =
+        "focus-ring text-[10px] px-2 py-0.5 rounded-full border border-slate-600/80 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity";
+      deleteButton.textContent = "Delete";
+      deleteButton.addEventListener("click", () => {
+        startDeleteConfirmation(todo, li);
+      });
+
+      actionsRow.appendChild(completeLabel);
+      actionsRow.appendChild(deleteButton);
+
+      metaRow.appendChild(createdAt);
+      metaRow.appendChild(actionsRow);
+
+      titleRow.appendChild(textEl);
+      titleRow.appendChild(badge);
+
+      mainCol.appendChild(titleRow);
+      mainCol.appendChild(metaRow);
+
+      li.appendChild(checkboxWrapper);
+      li.appendChild(mainCol);
+
+      updateTodoListItemVisuals(li, todo);
+
+      return li;
+    }
+
+    function updateTodoListItemElement(li, todo) {
+      li.setAttribute("data-id", todo.id);
+      updateTodoListItemVisuals(li, todo);
+    }
+
+    function updateTodoListItemVisuals(li, todo) {
+      const checkboxWrapper = li.children[0];
+      const mainCol = li.children[1];
+
+      if (!checkboxWrapper || !mainCol) return;
+
+      const innerDot = checkboxWrapper.querySelector("div");
+      checkboxWrapper.setAttribute("aria-pressed", todo.completed ? "true" : "false");
+
+      checkboxWrapper.style.borderColor = todo.completed ? config.primary_action_color : "#4b5563";
+      if (innerDot) {
+        innerDot.style.backgroundColor = todo.completed ? config.primary_action_color : "transparent";
+      }
+
+      const titleRow = mainCol.children[0];
+      const metaRow = mainCol.children[1];
+
+      if (!titleRow || !metaRow) return;
+
+      const textEl = titleRow.children[0];
+      const badge = titleRow.children[1];
+
+      const createdAt = metaRow.children[0];
+      const actionsRow = metaRow.children[1];
+      const completeLabel = actionsRow ? actionsRow.children[0] : null;
+
+      if (textEl) {
+        textEl.textContent = todo.title;
+        textEl.style.color = todo.completed ? "#9ca3af" : config.text_color;
+        textEl.style.textDecoration = todo.completed ? "line-through" : "none";
+      }
+
+      if (badge) {
+        const { label, bg, text } = priorityLabelAndColor(todo.priority);
+        badge.textContent = label;
+        badge.style.backgroundColor = bg;
+        badge.style.color = text;
+        if (todo.priority === "daily" || todo.priority === "normal") {
+          badge.style.borderColor = "#4b5563";
+        } else {
+          badge.style.borderColor = bg;
+        }
+      }
+
+      if (createdAt) {
+        createdAt.textContent = formatCreatedAt(todo.created_at);
+        createdAt.style.color = "#9ca3af";
+      }
+
+      if (completeLabel) {
+        completeLabel.textContent = todo.completed ? "Completed" : "In progress";
+        completeLabel.style.color = todo.completed ? config.primary_action_color : config.text_color;
+      }
+
+      li.style.opacity = todo.completed ? "0.75" : "1";
+      li.style.transform = todo.completed ? "scale(0.99)" : "scale(1)";
+    }
+
+    function formatCreatedAt(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      const hours = d.getHours().toString().padStart(2, "0");
+      const minutes = d.getMinutes().toString().padStart(2, "0");
+      return `Created at ${hours}:${minutes}`;
+    }
+
+    function startDeleteConfirmation(todo, li) {
+      const actionsRow = li.querySelector("div > div > div:nth-child(2)");
+      if (!actionsRow) return;
+
+      actionsRow.innerHTML = "";
+
+      const confirmLabel = document.createElement("span");
+      confirmLabel.className = "text-[10px] mr-1";
+      confirmLabel.textContent = "Delete quest?";
+
+      const confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className =
+        "focus-ring text-[10px] px-2 py-0.5 rounded-full border border-red-500/80 bg-red-500/20";
+      confirmBtn.textContent = "Yes";
+      confirmBtn.addEventListener("click", () => {
+        handleDeleteTodo(todo);
+      });
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className =
+        "focus-ring text-[10px] px-2 py-0.5 rounded-full border border-slate-600/80 bg-slate-900/60";
+      cancelBtn.textContent = "No";
+      cancelBtn.addEventListener("click", () => {
+        renderTodoList();
+      });
+
+      actionsRow.appendChild(confirmLabel);
+      actionsRow.appendChild(confirmBtn);
+      actionsRow.appendChild(cancelBtn);
+    }
+
+    // --------- HANDLERS ---------
+    function handleCreateTodo(title, priority) {
+      const messageEl = document.getElementById("form-message");
+
+      if (!title || !title.trim()) {
+        if (messageEl) {
+          messageEl.textContent = "Give your quest a name first.";
+          messageEl.style.color = config.secondary_action_color;
+        }
+        return;
+      }
+
+      if (todos.length >= 999) {
+        if (messageEl) {
+          messageEl.textContent = "Max 999 quests reached. Please finish or delete some first.";
+          messageEl.style.color = "#f97373";
+        }
+        return;
+      }
+
+      const newTodo = {
+        id: Date.now().toString(),
+        title: title.trim(),
+        completed: false,
+        priority: priority || "normal",
+        created_at: new Date().toISOString()
+      };
+
+      todos.push(newTodo);
+      saveTodos();
+      renderTodoList();
+
+      if (messageEl) {
+        messageEl.textContent = "Quest added!";
+        messageEl.style.color = config.primary_action_color;
+      }
+
+      const input = document.getElementById("todo-input");
+      if (input) input.value = "";
+    }
+
+    function handleToggleTodo(todo) {
+      const index = todos.findIndex(t => t.id === todo.id);
+      if (index !== -1) {
+        todos[index].completed = !todos[index].completed;
+        saveTodos();
+        renderTodoList();
+      }
+    }
+
+    function handleDeleteTodo(todo) {
+      const messageEl = document.getElementById("form-message");
+
+      todos = todos.filter(t => t.id !== todo.id);
+      saveTodos();
+      renderTodoList();
+
+      if (messageEl) {
+        messageEl.textContent = "Quest deleted.";
+        messageEl.style.color = config.text_color;
+      }
+    }
+
+    // --------- EVENT LISTENERS ---------
+    function setupEventListeners() {
+      const form = document.getElementById("todo-form");
+      const filterAll = document.getElementById("filter-all");
+      const filterActive = document.getElementById("filter-active");
+      const filterCompleted = document.getElementById("filter-completed");
+
+      if (form) {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const input = document.getElementById("todo-input");
+          const prioritySelect = document.getElementById("priority-select");
+          const title = input ? input.value : "";
+          const priority = prioritySelect ? prioritySelect.value : "normal";
+          handleCreateTodo(title, priority);
+        });
+      }
+
+      if (filterAll) {
+        filterAll.addEventListener("click", () => {
+          currentFilter = "all";
+          renderTodoList();
+        });
+      }
+      if (filterActive) {
+        filterActive.addEventListener("click", () => {
+          currentFilter = "active";
+          renderTodoList();
+        });
+      }
+      if (filterCompleted) {
+        filterCompleted.addEventListener("click", () => {
+          currentFilter = "completed";
+          renderTodoList();
+        });
+      }
+    }
+
+    // --------- INITIALIZE ---------
+    (function init() {
+      applyConfig();
+      loadTodos();
+      setupEventListeners();
+      renderTodoList();
+    })();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a41e0e961467edf',t:'MTc2NDA4MTM4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
